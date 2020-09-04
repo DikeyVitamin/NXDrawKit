@@ -14,7 +14,7 @@ import MobileCoreServices
 
 class ViewController: UIViewController {
     weak var canvasView: Canvas?
-    weak var paletteView: Palette?
+    @IBOutlet weak var paletteView: Palette!
     weak var toolBar: ToolBar?
     weak var bottomView: UIView?
     
@@ -34,44 +34,25 @@ class ViewController: UIViewController {
     }
     
     override func viewWillLayoutSubviews() {
-        let topMargin = UIApplication.shared.topSafeAreaMargin() + 50
-        let leftMargin = UIApplication.shared.leftSafeAreaMargin() + 20
-        let rightMargin = UIApplication.shared.rightSafeAreaMargin() + 20
-        let bottomMargin = UIApplication.shared.bottomSafeAreaMargin()
+        let topMargin = UIApplication.shared.topSafeAreaMargin()
+        let leftMargin = UIApplication.shared.leftSafeAreaMargin()
+        let rightMargin = UIApplication.shared.rightSafeAreaMargin()
+        let bottomMargin = UIApplication.shared.bottomSafeAreaMargin() + 200
         let width = view.frame.width
         let height = view.frame.height
 
         self.canvasView?.frame = CGRect(x: leftMargin,
                                         y: topMargin,
                                         width: width - (leftMargin + rightMargin),
-                                        height: width - (leftMargin + rightMargin))
-
-        guard let paletteView = self.paletteView else {
-            return
-        }
-
-        let paletteHeight = paletteView.paletteHeight()
-        paletteView.frame = CGRect(x: 0,
-                                   y: height - (paletteHeight + bottomMargin),
-                                   width: width,
-                                   height: paletteHeight)
-
+                                        height: height - (paletteView.frame.height + 70))
         
-        let toolBarHeight = paletteHeight * 0.25
-        let startY = paletteView.frame.minY - toolBarHeight
-        self.toolBar?.frame = CGRect(x: 0, y: startY, width: width, height: toolBarHeight)
-        
-        self.bottomView?.frame = CGRect(x: 0, y: paletteView.frame.maxY, width: width, height: bottomMargin)
     }
     
     private func setupPalette() {
         self.view.backgroundColor = UIColor.white
         
-        let paletteView = Palette()
         paletteView.delegate = self
         paletteView.setup()
-        self.view.addSubview(paletteView)
-        self.paletteView = paletteView
         
         let bottomView = UIView()
         bottomView.backgroundColor = UIColor(red: 0.22, green: 0.22, blue: 0.21, alpha: 1.0)
@@ -86,14 +67,14 @@ class ViewController: UIViewController {
         toolBar.loadButton?.addTarget(self, action: #selector(ViewController.onClickLoadButton), for: .touchUpInside)
         toolBar.saveButton?.addTarget(self, action: #selector(ViewController.onClickSaveButton), for: .touchUpInside)
         toolBar.saveButton?.setTitle("share", for: UIControl.State())   // default title is "Save"
-        toolBar.clearButton?.addTarget(self, action: #selector(ViewController.onClickClearButton), for: .touchUpInside)
+        
         toolBar.loadButton?.isEnabled = true
         self.view.addSubview(toolBar)
         self.toolBar = toolBar
     }
     
     private func setupCanvas() {
-        let canvasView = Canvas()
+        let canvasView = Canvas(canvasId: nil, backgroundImage: takeScreenshot())
         canvasView.delegate = self
         canvasView.layer.borderColor = UIColor(red: 0.22, green: 0.22, blue: 0.22, alpha: 0.8).cgColor
         canvasView.layer.borderWidth = 2.0
@@ -108,6 +89,21 @@ class ViewController: UIViewController {
         self.toolBar?.redoButton?.isEnabled = canvas.canRedo()
         self.toolBar?.saveButton?.isEnabled = canvas.canSave()
         self.toolBar?.clearButton?.isEnabled = canvas.canClear()
+    }
+    
+    open func takeScreenshot(_ shouldSave: Bool = false) -> UIImage? {
+        var screenshotImage :UIImage?
+        let layer = UIApplication.shared.keyWindow?.layer
+        let scale = UIScreen.main.scale
+        UIGraphicsBeginImageContextWithOptions(layer?.frame.size ?? CGSize(width: 0, height: 0), false, scale);
+        guard let context = UIGraphicsGetCurrentContext() else {return nil}
+        layer?.render(in:context)
+        screenshotImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        if let image = screenshotImage, shouldSave {
+            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+        }
+        return screenshotImage
     }
     
     @objc func onClickUndoButton() {
@@ -126,10 +122,12 @@ class ViewController: UIViewController {
         self.canvasView?.save()
     }
 
-    @objc func onClickClearButton() {
-        self.canvasView?.clear()
+    
+    @IBAction func clearCanvas(_ sender: UIButton) {
+         self.canvasView?.clear()
     }
-
+    
+   
     
     // MARK: - Image and Photo selection
     private func showActionSheetForPhotoSelection() {

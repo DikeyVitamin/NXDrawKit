@@ -18,7 +18,7 @@ class CircleButton: UIButton {
             super.isSelected = selectedValue
             let isBright = self.color.isEqual(UIColor.white) || self.color.isEqual(UIColor.clear)
             let selectedColor = !self.isEnabled ? UIColor.clear : isBright ? UIColor.gray : UIColor.white
-            self.layer.borderColor = self.isSelected ? selectedColor.cgColor : self.color?.cgColor
+            //self.layer.borderColor = self.isSelected ? selectedColor.cgColor : self.color?.cgColor
         }
     }
     
@@ -32,6 +32,11 @@ class CircleButton: UIButton {
         }
     }
     
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        self.layer.cornerRadius = self.frame.width / 2.0
+        self.layer.borderColor = UIColor.white.cgColor
+    }
     
     // MARK: - Initializer
     @objc init(diameter: CGFloat, color: UIColor, opacity: CGFloat) {
@@ -48,7 +53,7 @@ class CircleButton: UIButton {
         self.opacity = opacity
         self.diameter = diameter
         
-        self.layer.cornerRadius = diameter / 2.0
+        self.layer.cornerRadius = self.frame.width / 2.0
         self.layer.borderColor = color.cgColor
         self.layer.borderWidth = (diameter > 3) ? 3.0 : diameter / 3.0
         self.backgroundColor = color.withAlphaComponent(opacity)
